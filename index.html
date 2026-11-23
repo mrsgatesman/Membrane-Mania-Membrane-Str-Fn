@@ -408,7 +408,7 @@ const ITEMS = {
     nudge:"This is the messenger! It's the one that binds TO a receptor.",
     clue:"Find the little purple messenger sitting in the fork of the Y-shaped protein."},
   receptor:{fn:"Receptor protein",
-    def:"A peripheral membrane protein used for cell-to-cell communication that binds to a signal protein, which changes its shape and transmits a signal into the cell",
+    def:"An integral membrane protein used for cell-to-cell communication that binds to a signal protein, which changes its shape and transmits a signal into the cell",
     nudge:"This one RECEIVES the message. It catches a signal protein and passes the signal into the cell.",
     clue:"Find the orange Y-shaped protein that's catching the purple messenger."},
   cytoplasm:{fn:"Cytoplasm",
@@ -518,10 +518,10 @@ const QUIZ = [
    opts:["It lets some substances cross but not others","It lets everything cross freely","It blocks everything from crossing","It's only half made of phospholipids"],
    hint:"“Semi” means partly. “Permeable” means able to pass through.",
    exp:"Semi-permeable (selectively permeable) means the membrane controls what gets in and out. Some things cross easily and others can't."},
-  {q:"Which of these is NOT an integral protein?",
-   opts:["Anchor peripheral protein","Aquaporin","Protein pump","Glycoprotein"],
-   hint:"Integral proteins are embedded IN the membrane. Which one only sits on the surface?",
-   exp:"Anchor peripheral proteins sit on the surface of the membrane. Aquaporins, pumps and glycoproteins are all integral proteins anchored into it."},
+  {q:"During passive transport (like diffusion and osmosis), which way do molecules move?",
+   opts:["From high concentration to low concentration, without using energy","From low concentration to high concentration, using ATP","Only into the cell, never out","Only when a vesicle carries them"],
+   hint:"“Passive” means the cell doesn't spend any energy. Which way do things spread out on their own?",
+   exp:"In passive transport, molecules naturally move from high to low concentration (down their concentration gradient), so the cell doesn't spend any energy."},
   {img:"cyto", q:"What do the circled fibers do for the cell?",
    opts:["Help the cell keep its shape and internal organization","Carry water across the membrane","Act as name tags for other cells","Pump ions out of the cell"],
    hint:"These fibers are the cell's “skeleton.”",
@@ -1107,7 +1107,7 @@ function attemptLabel(key, zone){
     setTimeout(() => zone.classList.remove("shake"), 500);
     if(chip){ chip.classList.remove("shake"); void chip.offsetWidth; chip.classList.add("shake"); setTimeout(()=>chip.classList.remove("shake"),500); }
     let msg;
-    if(key==="integral" && ["aquaporin","glycoprotein","pump"].includes(zk))
+    if(key==="integral" && ["aquaporin","glycoprotein","pump","receptor"].includes(zk))
       msg = "Ooh, so close! That one IS an integral protein, but it has a more specific name. " + ITEMS.integral.clue;
     else
       msg = `Hmm, <b>${ITEMS[key].dg}</b> doesn't go there. Membranes are flexible, and so are you! ${ITEMS[key].clue}`;
