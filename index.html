@@ -826,6 +826,7 @@ function award(attempts){
   updateHUD(true);
 }
 function show(id){
+  if(typeof finishDrag === "function") finishDrag(null, true);
   document.querySelectorAll(".screen").forEach(s => s.hidden = (s.id !== id));
   const home = id === "startScreen";
   $("#hud").hidden = home; $("#menuBtn").hidden = home; $("#hintBtn").hidden = home;
@@ -1020,6 +1021,27 @@ function autoScroll(){
   updateOver();
   autoRAF = requestAnimationFrame(autoScroll);
 }
+/* Dragging is tracked once, at the window level, so a drag always ends cleanly:
+   finger lifted, a second finger, the browser cancelling, switching tabs, or leaving the screen. */
+function clearGhosts(){
+  document.querySelectorAll(".chip.ghost").forEach(g => g.remove());
+  ghost = null;
+  document.querySelectorAll(".chip.dragging").forEach(c => c.classList.remove("dragging"));
+  document.querySelectorAll(".zone.over").forEach(z => z.classList.remove("over"));
+}
+function finishDrag(e, cancel){
+  const d = drag;
+  let z = null;
+  if(d && d.moved && !cancel && e && ghost){
+    ghost.style.left = e.clientX + "px"; ghost.style.top = e.clientY + "px";
+    d.px = e.clientX; d.py = e.clientY;
+    z = dropZone();
+  }
+  drag = null;
+  clearGhosts();
+  if(d && d.moved){ suppressClick = true; setTimeout(() => { suppressClick = false; }, 80); }
+  if(z && document.contains(d.chip)) attemptLabel(d.key, z);
+}
 function wireChip(chip){
   const key = chip.dataset.key;
   chip.addEventListener("click", () => {
@@ -1027,42 +1049,34 @@ function wireChip(chip){
     setSel(sel === key ? null : key);
   });
   chip.addEventListener("pointerdown", e => {
-    if(e.button !== 0) return;
-    drag = {chip, x:e.clientX, y:e.clientY, moved:false, over:null};
+    if(!e.isPrimary || e.button !== 0) return;
+    if(drag) finishDrag(null, true);
+    drag = {chip, key, id:e.pointerId, x:e.clientX, y:e.clientY, moved:false, over:null};
     try{ chip.setPointerCapture(e.pointerId); }catch(_){}
   });
-  chip.addEventListener("pointermove", e => {
-    if(!drag || drag.chip !== chip) return;
-    if(!drag.moved && Math.hypot(e.clientX-drag.x, e.clientY-drag.y) > 6){
-      drag.moved = true;
-      ghost = chip.cloneNode(true);
-      ghost.classList.remove("selected"); ghost.classList.add("ghost");
-      document.body.appendChild(ghost);
-      chip.classList.add("dragging");
-      setSel(key);
-    }
-    if(drag.moved){
-      drag.px = e.clientX; drag.py = e.clientY;
-      ghost.style.left = e.clientX + "px"; ghost.style.top = e.clientY + "px";
-      updateOver();
-      if(!autoRAF) autoRAF = requestAnimationFrame(autoScroll);
-    }
-  });
-  const end = (e, cancel) => {
-    if(!drag || drag.chip !== chip) return;
-    const d = drag; drag = null;
-    if(!d.moved) return;
-    suppressClick = true; setTimeout(() => { suppressClick = false; }, 80);
-    if(ghost){ ghost.style.left = e.clientX + "px"; ghost.style.top = e.clientY + "px"; }
-    const z = cancel ? null : dropZone();
-    if(ghost){ ghost.remove(); ghost = null; }
-    chip.classList.remove("dragging");
-    if(d.over) d.over.classList.remove("over");
-    if(z) attemptLabel(key, z);
-  };
-  chip.addEventListener("pointerup", e => end(e,false));
-  chip.addEventListener("pointercancel", e => end(e,true));
 }
+window.addEventListener("pointermove", e => {
+  if(!drag || e.pointerId !== drag.id) return;
+  if(!drag.moved && Math.hypot(e.clientX-drag.x, e.clientY-drag.y) > 6){
+    clearGhosts();
+    drag.moved = true;
+    ghost = drag.chip.cloneNode(true);
+    ghost.classList.remove("selected","shake"); ghost.classList.add("ghost");
+    document.body.appendChild(ghost);
+    drag.chip.classList.add("dragging");
+    setSel(drag.key);
+  }
+  if(drag.moved && ghost){
+    drag.px = e.clientX; drag.py = e.clientY;
+    ghost.style.left = e.clientX + "px"; ghost.style.top = e.clientY + "px";
+    updateOver();
+    if(!autoRAF) autoRAF = requestAnimationFrame(autoScroll);
+  }
+});
+window.addEventListener("pointerup", e => { if(drag && e.pointerId === drag.id) finishDrag(e, false); });
+window.addEventListener("pointercancel", e => { if(drag && e.pointerId === drag.id) finishDrag(e, true); });
+window.addEventListener("blur", () => finishDrag(null, true));
+document.addEventListener("visibilitychange", () => { if(document.hidden) finishDrag(null, true); });
 function attemptLabel(key, zone){
   const zk = zone.dataset.key, ak = "l:"+key;
   const chip = document.querySelector(`#bank .chip[data-key="${key}"]`);
